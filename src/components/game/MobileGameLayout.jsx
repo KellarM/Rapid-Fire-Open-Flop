@@ -700,7 +700,7 @@ export default function MobileGameLayout({
         setBoardTheme={setBoardTheme}
         onHowToPlay={() => { setShowSettings(false); setShowHowToPlay(true); }}
         onGameRules={() => { setShowSettings(false); setShowGameRules(true); }}
-        onResetBank={() => { actions.resetBank(); setPlayerStats({ totalBets: 0, totalWins: 0, roundsPlayed: 0, roundsWon: 0, highestMultiplier: 0, highestBalance: null, lowestBalance: null }); }}
+        onResetBank={(amount) => { actions.resetBank(amount); setPlayerStats({ totalBets: 0, totalWins: 0, roundsPlayed: 0, roundsWon: 0, highestMultiplier: 0, highestBalance: null, lowestBalance: null }); }}
         onMobileLayout={onOpenMobileLayout}
       />
       <HowToPlayModal isOpen={showHowToPlay} onClose={() => setShowHowToPlay(false)} />

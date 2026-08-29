@@ -9,6 +9,20 @@ const COLORS = [
   { id: 'green', label: 'Green', dot: '#0a4a1e' },
 ];
 
+const BANK_RESET_OPTIONS = [20, 50, 100];
+const BANK_RESET_STORAGE_KEY = 'rfpf_bank_reset_amount';
+
+function loadBankResetAmount() {
+  try {
+    const raw = localStorage.getItem(BANK_RESET_STORAGE_KEY);
+    const v = raw ? parseFloat(raw) : 20;
+    return BANK_RESET_OPTIONS.includes(v) ? v : 20;
+  } catch { return 20; }
+}
+function saveBankResetAmount(value) {
+  try { localStorage.setItem(BANK_RESET_STORAGE_KEY, String(value)); } catch {}
+}
+
 const OVERLAY = {
   position: 'fixed', inset: 0,
   background: 'rgba(0,0,0,0.7)',
@@ -47,6 +61,12 @@ export default function SettingsModal({ isOpen, onClose, playerStats = {}, board
   const [crowdOn, setCrowdOn] = useState(true);
   const [crowdVolume, setCrowdVolume] = useState(40);
   const [tab, setTab] = useState('sound');
+  const [bankResetAmount, setBankResetAmount] = useState(loadBankResetAmount);
+
+  const handleBankResetAmountChange = (value) => {
+    setBankResetAmount(value);
+    saveBankResetAmount(value);
+  };
 
   useEffect(() => {
     if (isOpen) {
@@ -117,6 +137,31 @@ export default function SettingsModal({ isOpen, onClose, playerStats = {}, board
                   display: 'block',
                 }} />
                 {t.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Bank Reset Amount */}
+        <div>
+          <div style={{ fontSize: 10, fontWeight: 700, color: 'rgba(197,160,89,0.6)', letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: 8 }}>
+            RESET BANK AMOUNT
+          </div>
+          <div style={{ display: 'flex', gap: 8 }}>
+            {BANK_RESET_OPTIONS.map(value => (
+              <button key={value}
+                onClick={() => handleBankResetAmountChange(value)}
+                style={{
+                  flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  padding: '10px 4px', borderRadius: 10, cursor: 'pointer',
+                  fontWeight: 700, fontSize: 13,
+                  color: bankResetAmount === value ? '#fde047' : '#94a3b8',
+                  border: bankResetAmount === value ? '2px solid #facc15' : '1px solid rgba(197,160,89,0.3)',
+                  background: bankResetAmount === value ? 'rgba(100,60,0,0.55)' : 'rgba(0,0,0,0.3)',
+                  transition: 'all 0.15s',
+                }}
+              >
+                ${value}
               </button>
             ))}
           </div>
@@ -225,11 +270,11 @@ export default function SettingsModal({ isOpen, onClose, playerStats = {}, board
 
         {/* Close */}
         <button
-          onClick={onResetBank}
+          onClick={() => onResetBank && onResetBank(bankResetAmount)}
           style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, background: 'rgba(180,40,40,0.25)', color: '#ff6b6b', border: '1px solid #ff6b6b', borderRadius: 8, padding: '9px 0', fontWeight: 800, fontSize: 13, cursor: 'pointer', letterSpacing: '0.5px' }}
-          title="Reset bankroll to $20, clear stats, and restore default sound settings"
+          title={`Reset bankroll to $${bankResetAmount}, clear stats, and restore default sound settings`}
         >
-          <RotateCcw size={15} /> RESET BANK TO $20
+          <RotateCcw size={15} /> RESET BANK TO ${bankResetAmount}
         </button>
         <button
           onClick={onClose}

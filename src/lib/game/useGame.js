@@ -644,8 +644,9 @@ export function useGame() {
   // Full player reset: bank → $20, stats → zeros, sound → defaults.
   // All three persistence layers are cleared so a fresh page load also
   // starts clean. This is the player's deliberate "start fresh" action.
-  const resetBank = useCallback(() => {
-    setBank(20);              // useEffect will persist this via saveBankValue
+  const resetBank = useCallback((amount) => {
+    const resetValue = Number.isFinite(amount) ? amount : START_BANK;
+    setBank(resetValue);        // useEffect will persist this via saveBankValue
     clearStatsValue();          // Clear persisted stats
     resetSoundToDefaults();     // Clear + reset sound to defaults
     setDeck([]);
