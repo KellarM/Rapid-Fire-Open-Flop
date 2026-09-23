@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect, useCallback, useRef } from 'react';
+import { base44 } from '@/api/base44Client';
 import {
   FIXED_HANDS,
   DEALER_STOCK,
@@ -199,6 +200,28 @@ export function useGame() {
   const [phase, setPhase] = useState('ante');
   const [bonus, setBonus] = useState(null);
   const [anteStructure, setAnteStructure] = useState(() => { try { return getSavedStructureId(); } catch { return 'C'; } });
+
+  // ── Server-side source of truth for Ante Structure ──────────────────────
+  // The Ante Bonus Structure is an operator-level game config stored server-
+  // side (GameConfig entity via the gameConfig backend function) so a change
+  // made on one device and published applies to every device — it is NOT
+  // trapped in a single browser's localStorage (which is per-device and was
+  // why desktop showed "B" while mobile fell back to the default "C").
+  // localStorage remains only as an instant-load cache/fallback.
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      try {
+        const res = await base44.functions.invoke('gameConfig', { action: 'get' });
+        const id = res?.data?.anteStructureId;
+        if (mounted && id) {
+          setAnteStructure(id);
+          try { saveStructureId(id); } catch { /* cache best-effort */ }
+        }
+      } catch { /* keep localStorage fallback already set in state */ }
+    })();
+    return () => { mounted = false; };
+  }, []);
 
   // ── Live-sync Ante Structure from the Operator Tools menu ──────────────
   // The operator changes this via ToolBar > Ante Structure (independent

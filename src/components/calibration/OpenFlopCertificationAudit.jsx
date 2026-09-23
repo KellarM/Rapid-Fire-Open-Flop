@@ -463,7 +463,7 @@ function ModulePanel({ module, flopData, flopIndex }) {
                           );
                         }
                         const odds100 = r.trueProb > 0 ? (1 / r.trueProb) - 1 : null;
-                        const oddsLiveCard = r.trueProb > 0 ? ((rtpValue / 100) / r.trueProb) - 1 : null;
+                        const oddsLiveCard = r.trueProb > 0 ? ((r.observedRtp / 100) / r.trueProb) - 1 : null;
                         const odds95 = r.trueProb > 0 ? (0.95 / r.trueProb) - 1 : null;
                         const odds965 = r.trueProb > 0 ? (0.965 / r.trueProb) - 1 : null;
                         const odds98 = r.trueProb > 0 ? (0.98 / r.trueProb) - 1 : null;
@@ -499,7 +499,7 @@ function ModulePanel({ module, flopData, flopIndex }) {
                           );
                         }
                         const odds100 = r.trueProb > 0 ? (1 / r.trueProb) - 1 : null;
-                        const oddsLiveRank = r.trueProb > 0 ? ((rtpValue / 100) / r.trueProb) - 1 : null;
+                        const oddsLiveRank = r.trueProb > 0 ? ((r.observedRtp / 100) / r.trueProb) - 1 : null;
                         const odds95 = r.trueProb > 0 ? (0.95 / r.trueProb) - 1 : null;
                         const odds965 = r.trueProb > 0 ? (0.965 / r.trueProb) - 1 : null;
                         const odds98 = r.trueProb > 0 ? (0.98 / r.trueProb) - 1 : null;

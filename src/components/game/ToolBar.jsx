@@ -5,6 +5,7 @@ import { Wrench, Layers } from 'lucide-react';
 import { fetchCapturedHands, recalcHandRtp, recalcPayout } from '../../lib/captureApi';
 import { ANTE_STRUCTURES, getSavedStructureId, saveStructureId } from '../../lib/game/anteStructures';
 import { DEFAULT_BONUS_MULTIPLIERS, getSavedBonusMultipliers, saveBonusMultipliers } from '../../lib/game/bonusMultipliers';
+import { base44 } from '@/api/base44Client';
 
 // ── Inject toolbar animations once ───────────────────────────────────────────
 const STYLE_ID = 'rf-toolbar-style';
@@ -269,10 +270,21 @@ function AnteStructureModal({ onClose }) {
     setSavedFlash(false);
   };
 
-  const handleSave = () => {
+  const [saving, setSaving] = useState(false);
+  const handleSave = async () => {
+    setSaving(true);
+    try {
+      // Server-side source of truth — applies to every device once published.
+      await base44.functions.invoke('gameConfig', { action: 'set', anteStructureId: selectedId });
+    } catch (e) {
+      // Server unavailable: fall back to local-only so the operator's
+      // session still reflects the change (will sync on next successful set).
+    }
+    // Local cache + live-sync event for the running session.
     saveStructureId(selectedId);
     setActiveId(selectedId);
     setSavedFlash(true);
+    setSaving(false);
   };
 
   return (
