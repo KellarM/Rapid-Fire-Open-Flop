@@ -5,6 +5,10 @@
     "anteStructureId": {
       "type": "string",
       "default": "C"
+    },
+    "cascadeEnabled": {
+      "type": "boolean",
+      "default": false
     }
   },
   "rls": {

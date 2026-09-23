@@ -1,10 +1,11 @@
 import React, { useState, useRef, useEffect, useLayoutEffect, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
-import { Wrench, Layers } from 'lucide-react';
+import { Wrench, Layers, Shuffle } from 'lucide-react';
 import { fetchCapturedHands, recalcHandRtp, recalcPayout } from '../../lib/captureApi';
 import { ANTE_STRUCTURES, getSavedStructureId, saveStructureId } from '../../lib/game/anteStructures';
 import { DEFAULT_BONUS_MULTIPLIERS, getSavedBonusMultipliers, saveBonusMultipliers } from '../../lib/game/bonusMultipliers';
+import { getSavedCascadeEnabled, saveCascadeEnabled } from '../../lib/game/cascadeBetting';
 import { base44 } from '@/api/base44Client';
 
 // ── Inject toolbar animations once ───────────────────────────────────────────
@@ -1086,6 +1087,149 @@ function StatBox({ label, value, color }) {
   );
 }
 
+// ── Cascade Betting Modal (Operator Tool) ───────────────────────────────────
+// Toggles Cascade Betting: when ON, the Color board's maximum bet becomes the
+// sum of the Card + Rank board bets (instead of the Ante). When OFF, betting
+// is unchanged. Stored server-side (GameConfig) so it applies to every device.
+function CascadeModal({ onClose }) {
+  const [enabled, setEnabled] = useState(() => getSavedCascadeEnabled());
+  const [active, setActive] = useState(() => getSavedCascadeEnabled());
+  const [saving, setSaving] = useState(false);
+  const [savedFlash, setSavedFlash] = useState(false);
+
+  const handleSave = async () => {
+    setSaving(true);
+    try {
+      await base44.functions.invoke('gameConfig', { action: 'set', cascadeEnabled: enabled });
+    } catch (e) {
+      // Server unavailable: fall back to local-only.
+    }
+    saveCascadeEnabled(enabled);
+    setActive(enabled);
+    setSavedFlash(true);
+    setSaving(false);
+  };
+
+  return (
+    <div style={{
+      position: 'fixed', inset: 0, zIndex: 2000,
+      background: 'rgba(0,0,0,0.88)',
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+    }}>
+      <div style={{
+        background: 'linear-gradient(160deg, #1a0f00 0%, #0a0600 100%)',
+        border: '2px solid rgba(202,138,4,0.7)',
+        borderRadius: 16,
+        width: 520,
+        display: 'flex',
+        flexDirection: 'column',
+        boxShadow: '0 12px 60px rgba(0,0,0,0.95)',
+      }}>
+        {/* Header */}
+        <div style={{
+          padding: '14px 22px',
+          borderBottom: '1px solid rgba(202,138,4,0.3)',
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          flexShrink: 0,
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <div style={{
+              width: 32, height: 32, borderRadius: '50%',
+              background: 'linear-gradient(135deg, #e5c158 0%, #d4af37 100%)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+            }}>
+              <Shuffle size={16} color="#1a0f00" />
+            </div>
+            <span style={{
+              fontSize: 15, fontWeight: 900, color: '#facc15',
+              letterSpacing: '0.12em', textTransform: 'uppercase',
+            }}>
+              Cascade Betting
+            </span>
+          </div>
+          <button
+            onClick={onClose}
+            style={{
+              color: '#facc15', background: 'none', border: 'none',
+              cursor: 'pointer', fontSize: 20, lineHeight: 1, opacity: 0.8,
+            }}
+          >✕</button>
+        </div>
+
+        {/* Body */}
+        <div style={{ padding: '18px 22px', display: 'flex', flexDirection: 'column', gap: 14 }}>
+          <div style={{ fontSize: 11, color: MUTED }}>
+            When <b style={{ color: BODY_TEXT }}>ON</b>, the Color board's maximum bet becomes the
+            sum of the Card board bet + the Hand Rank board bet (instead of the Ante). When
+            <b style={{ color: BODY_TEXT }}> OFF</b>, all board bets remain capped at the Ante as they are today.
+          </div>
+
+          <button
+            onClick={() => { setEnabled(e => !e); setSavedFlash(false); }}
+            style={{
+              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+              padding: '14px 16px', borderRadius: 10, cursor: 'pointer',
+              border: '1px solid rgba(197,160,89,0.4)',
+              background: enabled ? 'rgba(34,197,94,0.12)' : 'rgba(0,0,0,0.3)',
+            }}
+          >
+            <span style={{ color: '#fff', fontWeight: 800, fontSize: 13 }}>
+              Cascade Betting
+            </span>
+            <span style={{
+              display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, fontWeight: 800,
+              color: enabled ? GREEN : MUTED,
+            }}>
+              {enabled ? 'ON' : 'OFF'}
+              <span style={{
+                width: 44, height: 24, borderRadius: 12,
+                background: enabled ? 'linear-gradient(135deg, #22c55e, #16a34a)' : 'rgba(255,255,255,0.12)',
+                position: 'relative', transition: 'background 0.2s',
+              }}>
+                <span style={{
+                  position: 'absolute', top: 3, left: enabled ? 23 : 3,
+                  width: 18, height: 18, borderRadius: '50%', background: '#fff',
+                  transition: 'left 0.2s', boxShadow: '0 1px 3px rgba(0,0,0,0.5)',
+                }} />
+              </span>
+            </span>
+          </button>
+        </div>
+
+        {/* Footer */}
+        <div style={{
+          padding: '10px 22px',
+          borderTop: '1px solid rgba(202,138,4,0.2)',
+          display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+          flexShrink: 0,
+        }}>
+          <span style={{ color: MUTED, fontSize: 10 }}>
+            Active: <b style={{ color: active ? GREEN : MUTED }}>{active ? 'ON' : 'OFF'}</b>
+          </span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            {savedFlash && (
+              <span style={{ color: GREEN, fontSize: 10, fontWeight: 700 }}>SAVED ✓</span>
+            )}
+            <button
+              onClick={handleSave}
+              disabled={saving}
+              style={{
+                background: 'linear-gradient(135deg, #e5c158 0%, #d4af37 100%)',
+                color: '#3d3013', fontWeight: 800, fontSize: 12,
+                letterSpacing: '0.08em', padding: '8px 24px',
+                borderRadius: 7, border: 'none', cursor: saving ? 'not-allowed' : 'pointer',
+                opacity: saving ? 0.6 : 1,
+              }}
+            >
+              {saving ? 'SAVING…' : 'SAVE'}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ── Main ToolBar Component ────────────────────────────────────────────────────
 export default function ToolBar() {
   const navigate = useNavigate();
@@ -1093,6 +1237,7 @@ export default function ToolBar() {
   const [showCertTest, setShowCertTest] = useState(false);
   const [showAnteStructure, setShowAnteStructure] = useState(false);
   const [showBonusMultiplier, setShowBonusMultiplier] = useState(false);
+  const [showCascade, setShowCascade] = useState(false);
   const [menuPos, setMenuPos] = useState(null);
   const [visible, setVisible] = useState(false); // hidden by default -- summoned via hotkey only
   const btnRef = useRef(null);
@@ -1271,6 +1416,19 @@ export default function ToolBar() {
             BONUS MULTIPLIER
           </button>
 
+          <button
+            className="rf-tool-btn"
+            onClick={() => { setOpen(false); setShowCascade(true); }}
+          >
+            <span style={{
+              width: 22, height: 22, borderRadius: 5,
+              background: 'linear-gradient(135deg, #e5c158 0%, #d4af37 100%)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              flexShrink: 0,
+            }}><Shuffle size={12} color="#1a0f00" /></span>
+            CASCADE
+          </button>
+
           <div style={{
             color: 'rgba(197,160,89,0.3)', fontSize: 9, fontWeight: 600,
             letterSpacing: '0.08em', textAlign: 'center',
@@ -1294,6 +1452,11 @@ export default function ToolBar() {
 
       {showBonusMultiplier && typeof document !== 'undefined' && createPortal(
         <BonusMultiplierModal onClose={() => setShowBonusMultiplier(false)} />,
+        document.body
+      )}
+
+      {showCascade && typeof document !== 'undefined' && createPortal(
+        <CascadeModal onClose={() => setShowCascade(false)} />,
         document.body
       )}
     </>

@@ -19,6 +19,7 @@ import { captureHand } from '../captureApi';
 import { settleRound } from './gameLogic';
 import { getStructureById, getSavedStructureId, saveStructureId, resolveAnteBonus, boardQualifies, ANTE_STRUCTURE_EVENT } from './anteStructures';
 import { getSavedBonusMultipliers, BONUS_MULTIPLIER_EVENT } from './bonusMultipliers';
+import { getSavedCascadeEnabled, saveCascadeEnabled, CASCADE_EVENT } from './cascadeBetting';
 import { playChipSound, resetSoundToDefaults } from './useGameSounds';
 import { bestHand, compare5, evaluate5, combinations } from './pokerEvaluator';
 
@@ -200,6 +201,7 @@ export function useGame() {
   const [phase, setPhase] = useState('ante');
   const [bonus, setBonus] = useState(null);
   const [anteStructure, setAnteStructure] = useState(() => { try { return getSavedStructureId(); } catch { return 'C'; } });
+  const [cascadeEnabled, setCascadeEnabled] = useState(() => { try { return getSavedCascadeEnabled(); } catch { return false; } });
 
   // ── Server-side source of truth for Ante Structure ──────────────────────
   // The Ante Bonus Structure is an operator-level game config stored server-
@@ -217,6 +219,11 @@ export function useGame() {
         if (mounted && id) {
           setAnteStructure(id);
           try { saveStructureId(id); } catch { /* cache best-effort */ }
+        }
+        const cascade = res?.data?.cascadeEnabled;
+        if (mounted && typeof cascade === 'boolean') {
+          setCascadeEnabled(cascade);
+          try { saveCascadeEnabled(cascade); } catch { /* cache best-effort */ }
         }
       } catch { /* keep localStorage fallback already set in state */ }
     })();
@@ -246,6 +253,15 @@ export function useGame() {
     };
     window.addEventListener(BONUS_MULTIPLIER_EVENT, handler);
     return () => window.removeEventListener(BONUS_MULTIPLIER_EVENT, handler);
+  }, []);
+
+  // ── Live-sync Cascade Betting toggle from the Operator Tools menu ──────
+  useEffect(() => {
+    const handler = (e) => {
+      try { setCascadeEnabled(e.detail); } catch { /* noop */ }
+    };
+    window.addEventListener(CASCADE_EVENT, handler);
+    return () => window.removeEventListener(CASCADE_EVENT, handler);
   }, []);
   const [bank, setBank] = useState(() => loadBankValue());
   // Persist bank value to localStorage + cookie on every change
@@ -312,13 +328,19 @@ export function useGame() {
 
   const caps = useMemo(() => {
     if (phase === 'ante' || ante === 0) return { card: 0, rank: 0, color: 0, river: 0 };
+    // Cascade Betting (operator toggle): when ON, the Color board's max bet
+    // is the sum of the Card + Rank board bets instead of the Ante. When OFF,
+    // every board caps at the Ante (original behavior).
+    const colorCap = cascadeEnabled
+      ? Math.max(0, (boardTotals.card + boardTotals.rank) - boardTotals.color)
+      : Math.max(0, ante - boardTotals.color);
     return {
       card: Math.max(0, ante - boardTotals.card),
       rank: Math.max(0, ante - boardTotals.rank),
-      color: Math.max(0, ante - boardTotals.color),
+      color: colorCap,
       river: Math.max(0, (boardTotals.card + boardTotals.rank + boardTotals.color) - boardTotals.river)
     };
-  }, [ante, phase, boardTotals]);
+  }, [ante, phase, boardTotals, cascadeEnabled]);
 
   const totalWagered = useMemo(() => {
     return ante + boardTotals.card + boardTotals.rank + boardTotals.color + boardTotals.river;
@@ -369,11 +391,14 @@ export function useGame() {
     if (bank < amount) return;  // Insufficient funds
 
     // Check cap synchronously using current bets state (closure is fresh — bets in deps)
+    const cardTotal = Object.values(bets.card).reduce((a,b)=>a+b,0);
+    const rankTotal = Object.values(bets.rank).reduce((a,b)=>a+b,0);
+    const colorTotal = Object.values(bets.color).reduce((a,b)=>a+b,0);
     const cap = board === 'river'
-      ? (Object.values(bets.card).reduce((a,b)=>a+b,0) +
-         Object.values(bets.rank).reduce((a,b)=>a+b,0) +
-         Object.values(bets.color).reduce((a,b)=>a+b,0))
-      : ante;
+      ? (cardTotal + rankTotal + colorTotal)
+      : (board === 'color' && cascadeEnabled)
+        ? (cardTotal + rankTotal)
+        : ante;
     let boardCurrent, positionCurrent;
     if (board === 'river') {
       positionCurrent = bets.river[position] || 0;
@@ -396,7 +421,7 @@ export function useGame() {
     });
     // Play chip sound directly — no callback, no return value, no middleman
     playChipSound();
-  }, [phase, selectedChip, ante, bank, bets]);
+  }, [phase, selectedChip, ante, bank, bets, cascadeEnabled]);
 
   const removeBet = useCallback((board, position) => {
     // Phase guard: can only remove bets during the phase they were placed
@@ -820,6 +845,7 @@ export function useGame() {
     winnerRiverSide,
     bonus,
     anteStructure,
+    cascadeEnabled,
     actions: {
       addToAnte,
       clearAnte,
