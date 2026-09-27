@@ -20,6 +20,8 @@ import { settleRound } from './gameLogic';
 import { getStructureById, getSavedStructureId, saveStructureId, resolveAnteBonus, boardQualifies, ANTE_STRUCTURE_EVENT } from './anteStructures';
 import { getSavedBonusMultipliers, BONUS_MULTIPLIER_EVENT } from './bonusMultipliers';
 import { getSavedCascadeEnabled, saveCascadeEnabled, CASCADE_EVENT } from './cascadeBetting';
+import { getSavedRtpSettings, saveRtpSettings, RTP_EVENT, DEFAULT_RTP_SETTINGS } from './rtpTool';
+import { checkPosition, publishRtpSnapshot } from './rtpVerification';
 import { playChipSound, resetSoundToDefaults } from './useGameSounds';
 import { bestHand, compare5, evaluate5, combinations } from './pokerEvaluator';
 
@@ -202,6 +204,7 @@ export function useGame() {
   const [bonus, setBonus] = useState(null);
   const [anteStructure, setAnteStructure] = useState(() => { try { return getSavedStructureId(); } catch { return 'C'; } });
   const [cascadeEnabled, setCascadeEnabled] = useState(() => { try { return getSavedCascadeEnabled(); } catch { return false; } });
+  const [rtpSettings, setRtpSettings] = useState(() => { try { return getSavedRtpSettings(); } catch { return { ...DEFAULT_RTP_SETTINGS }; } });
 
   // ── Server-side source of truth for Ante Structure ──────────────────────
   // The Ante Bonus Structure is an operator-level game config stored server-
@@ -224,6 +227,15 @@ export function useGame() {
         if (mounted && typeof cascade === 'boolean') {
           setCascadeEnabled(cascade);
           try { saveCascadeEnabled(cascade); } catch { /* cache best-effort */ }
+        }
+        if (mounted && typeof res?.data?.rtpToolEnabled === 'boolean') {
+          const next = {
+            enabled: res.data.rtpToolEnabled,
+            cardTarget: typeof res.data.cardRtpTarget === 'number' ? res.data.cardRtpTarget : DEFAULT_RTP_SETTINGS.cardTarget,
+            rankTarget: typeof res.data.rankRtpTarget === 'number' ? res.data.rankRtpTarget : DEFAULT_RTP_SETTINGS.rankTarget,
+          };
+          setRtpSettings(next);
+          try { saveRtpSettings(next); } catch { /* cache best-effort */ }
         }
       } catch { /* keep localStorage fallback already set in state */ }
     })();
@@ -262,6 +274,18 @@ export function useGame() {
     };
     window.addEventListener(CASCADE_EVENT, handler);
     return () => window.removeEventListener(CASCADE_EVENT, handler);
+  }, []);
+
+  // ── Live-sync the RTP tool settings from the Operator Tools menu ───────
+  // The operator changes the target RTP and on/off switch via ToolBar > RTP.
+  // Listening for the custom event means a running session picks up the new
+  // settings immediately, without a page reload.
+  useEffect(() => {
+    const handler = (e) => {
+      try { setRtpSettings(e.detail || getSavedRtpSettings()); } catch { /* noop */ }
+    };
+    window.addEventListener(RTP_EVENT, handler);
+    return () => window.removeEventListener(RTP_EVENT, handler);
   }, []);
   const [bank, setBank] = useState(() => loadBankValue());
   // Persist bank value to localStorage + cookie on every change
@@ -813,6 +837,45 @@ export function useGame() {
     return result.resolution.riverLow ? 'low' : 'high';
   }, [phase, result]);
 
+  // ■■ RTP tool — per-position pass/fail for the Card and Rank boards ■■■■
+  // Analytical only: reads the odds already on offer and compares each
+  // unlocked position's return against the operator's target. Locked
+  // positions are excluded — they aren't bettable, so pass/fail doesn't
+  // apply. Nothing here changes payouts, settlement or gameplay.
+  const rtpChecks = useMemo(() => {
+    if (!rtpSettings.enabled || revealed < 3 || !flopOdds) return null;
+    const card = {};
+    for (const o of flopOdds.cardOdds) {
+      if (o.locked) continue;
+      const c = checkPosition(o.probability, o.payout, rtpSettings.cardTarget);
+      if (c) card[o.handId] = c;
+    }
+    const rank = {};
+    for (const label of Object.keys(flopOdds.rankOdds)) {
+      const o = flopOdds.rankOdds[label];
+      if (o.locked) continue;
+      const c = checkPosition(o.probability, o.payout, rtpSettings.rankTarget);
+      if (c) rank[label] = c;
+    }
+    return { card, rank };
+  }, [rtpSettings, flopOdds, revealed]);
+
+  // ■■ RTP tool — publish the live flop for the operator's justification ■■
+  // The RTP panel subscribes to this so it can enumerate the 406 runouts for
+  // the hand actually in play, instead of an arbitrary flop.
+  useEffect(() => {
+    if (revealed >= 3 && flopOdds) {
+      publishRtpSnapshot({
+        flop: deck.slice(0, 3),
+        cardOdds: flopOdds.cardOdds,
+        rankOdds: flopOdds.rankOdds,
+        boardWinProb: flopOdds.boardWinProb,
+      });
+    } else {
+      publishRtpSnapshot(null);
+    }
+  }, [flopOdds, revealed, deck]);
+
   return {
     phase,
     bank,
@@ -846,6 +909,7 @@ export function useGame() {
     bonus,
     anteStructure,
     cascadeEnabled,
+    rtpChecks,
     actions: {
       addToAnte,
       clearAnte,

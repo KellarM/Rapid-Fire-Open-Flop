@@ -334,6 +334,7 @@ export default function GameTable() {
               leadingHandIds={game.leadingHandIds}
               winnerHandIds={game.winnerHandIds}
               bonusPulse={bonusPulse}
+              rtpChecks={game.rtpChecks}
             />
           </div>
         </div>
@@ -357,6 +358,7 @@ export default function GameTable() {
             leadingRiverSide={game.leadingRiverSide}
             winnerRiverSide={game.winnerRiverSide}
           bonusPulse={bonusPulse}
+          rtpChecks={game.rtpChecks}
           />
         </div>
       </div>

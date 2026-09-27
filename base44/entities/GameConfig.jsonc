@@ -9,6 +9,18 @@
     "cascadeEnabled": {
       "type": "boolean",
       "default": false
+    },
+    "rtpToolEnabled": {
+      "type": "boolean",
+      "default": false
+    },
+    "cardRtpTarget": {
+      "type": "number",
+      "default": 96.5
+    },
+    "rankRtpTarget": {
+      "type": "number",
+      "default": 96.5
     }
   },
   "rls": {

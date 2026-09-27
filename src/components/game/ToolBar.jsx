@@ -6,6 +6,7 @@ import { fetchCapturedHands, recalcHandRtp, recalcPayout } from '../../lib/captu
 import { ANTE_STRUCTURES, getSavedStructureId, saveStructureId } from '../../lib/game/anteStructures';
 import { DEFAULT_BONUS_MULTIPLIERS, getSavedBonusMultipliers, saveBonusMultipliers } from '../../lib/game/bonusMultipliers';
 import { getSavedCascadeEnabled, saveCascadeEnabled } from '../../lib/game/cascadeBetting';
+import RtpToolModal from './RtpToolModal';
 import { base44 } from '@/api/base44Client';
 
 // ── Inject toolbar animations once ───────────────────────────────────────────
@@ -1238,6 +1239,7 @@ export default function ToolBar() {
   const [showAnteStructure, setShowAnteStructure] = useState(false);
   const [showBonusMultiplier, setShowBonusMultiplier] = useState(false);
   const [showCascade, setShowCascade] = useState(false);
+  const [showRtp, setShowRtp] = useState(false);
   const [menuPos, setMenuPos] = useState(null);
   const [visible, setVisible] = useState(false); // hidden by default -- summoned via hotkey only
   const btnRef = useRef(null);
@@ -1429,6 +1431,19 @@ export default function ToolBar() {
             CASCADE
           </button>
 
+          <button
+            className="rf-tool-btn"
+            onClick={() => { setOpen(false); setShowRtp(true); }}
+          >
+            <span style={{
+              width: 22, height: 22, borderRadius: 5,
+              background: 'linear-gradient(135deg, #e5c158 0%, #d4af37 100%)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              flexShrink: 0, fontSize: 12, fontWeight: 900, color: '#1a0f00',
+            }}>%</span>
+            RTP
+          </button>
+
           <div style={{
             color: 'rgba(197,160,89,0.3)', fontSize: 9, fontWeight: 600,
             letterSpacing: '0.08em', textAlign: 'center',
@@ -1457,6 +1472,11 @@ export default function ToolBar() {
 
       {showCascade && typeof document !== 'undefined' && createPortal(
         <CascadeModal onClose={() => setShowCascade(false)} />,
+        document.body
+      )}
+
+      {showRtp && typeof document !== 'undefined' && createPortal(
+        <RtpToolModal onClose={() => setShowRtp(false)} />,
         document.body
       )}
     </>

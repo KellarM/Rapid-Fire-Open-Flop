@@ -11,6 +11,9 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.50';
 // The hidden hotkey is the gate, same as the previous localStorage design.
 const DEFAULT_ANTE_STRUCTURE_ID = 'C';
 const DEFAULT_CASCADE_ENABLED = false;
+const DEFAULT_RTP_TOOL_ENABLED = false;
+const DEFAULT_CARD_RTP_TARGET = 96.5;
+const DEFAULT_RANK_RTP_TARGET = 96.5;
 
 export default async function(req: Request): Promise<Response> {
   try {
@@ -25,6 +28,9 @@ export default async function(req: Request): Promise<Response> {
       return await base44.asServiceRole.entities.GameConfig.create({
         anteStructureId: DEFAULT_ANTE_STRUCTURE_ID,
         cascadeEnabled: DEFAULT_CASCADE_ENABLED,
+        rtpToolEnabled: DEFAULT_RTP_TOOL_ENABLED,
+        cardRtpTarget: DEFAULT_CARD_RTP_TARGET,
+        rankRtpTarget: DEFAULT_RANK_RTP_TARGET,
       });
     };
 
@@ -33,6 +39,9 @@ export default async function(req: Request): Promise<Response> {
       return Response.json({
         anteStructureId: record.anteStructureId || DEFAULT_ANTE_STRUCTURE_ID,
         cascadeEnabled: record.cascadeEnabled === true,
+        rtpToolEnabled: record.rtpToolEnabled === true,
+        cardRtpTarget: typeof record.cardRtpTarget === 'number' ? record.cardRtpTarget : DEFAULT_CARD_RTP_TARGET,
+        rankRtpTarget: typeof record.rankRtpTarget === 'number' ? record.rankRtpTarget : DEFAULT_RANK_RTP_TARGET,
       });
     }
 
@@ -44,8 +53,17 @@ export default async function(req: Request): Promise<Response> {
       if (typeof body.cascadeEnabled === 'boolean') {
         update.cascadeEnabled = body.cascadeEnabled;
       }
+      if (typeof body.rtpToolEnabled === 'boolean') {
+        update.rtpToolEnabled = body.rtpToolEnabled;
+      }
+      if (typeof body.cardRtpTarget === 'number' && body.cardRtpTarget > 0 && body.cardRtpTarget <= 100) {
+        update.cardRtpTarget = body.cardRtpTarget;
+      }
+      if (typeof body.rankRtpTarget === 'number' && body.rankRtpTarget > 0 && body.rankRtpTarget <= 100) {
+        update.rankRtpTarget = body.rankRtpTarget;
+      }
       if (Object.keys(update).length === 0) {
-        return Response.json({ error: 'anteStructureId or cascadeEnabled required' }, { status: 400 });
+        return Response.json({ error: 'anteStructureId, cascadeEnabled or RTP settings required' }, { status: 400 });
       }
       const list = await base44.asServiceRole.entities.GameConfig.list();
       let record;
@@ -53,6 +71,9 @@ export default async function(req: Request): Promise<Response> {
         record = await base44.asServiceRole.entities.GameConfig.create({
           anteStructureId: update.anteStructureId || DEFAULT_ANTE_STRUCTURE_ID,
           cascadeEnabled: update.cascadeEnabled !== undefined ? update.cascadeEnabled : DEFAULT_CASCADE_ENABLED,
+          rtpToolEnabled: update.rtpToolEnabled !== undefined ? update.rtpToolEnabled : DEFAULT_RTP_TOOL_ENABLED,
+          cardRtpTarget: update.cardRtpTarget !== undefined ? update.cardRtpTarget : DEFAULT_CARD_RTP_TARGET,
+          rankRtpTarget: update.rankRtpTarget !== undefined ? update.rankRtpTarget : DEFAULT_RANK_RTP_TARGET,
         });
       } else {
         record = await base44.asServiceRole.entities.GameConfig.update(list[0].id, update);
@@ -61,6 +82,9 @@ export default async function(req: Request): Promise<Response> {
         ok: true,
         anteStructureId: record.anteStructureId,
         cascadeEnabled: record.cascadeEnabled === true,
+        rtpToolEnabled: record.rtpToolEnabled === true,
+        cardRtpTarget: record.cardRtpTarget,
+        rankRtpTarget: record.rankRtpTarget,
       });
     }
 

@@ -250,6 +250,7 @@ export default function MobileGameLayout({
           leadingHandIds={game.leadingHandIds}
           winnerHandIds={game.winnerHandIds}
           bonusPulse={bonusPulse}
+          rtpChecks={game.rtpChecks}
           compact={true}
         />
       </ScaleToFitWidth>
@@ -277,6 +278,7 @@ export default function MobileGameLayout({
         bonusPulse={bonusPulse}
         mobileLayout={true}
         lockSize={34 * cardScale}
+        rtpChecks={game.rtpChecks}
       />
     </div>
   );
@@ -729,6 +731,7 @@ export default function MobileGameLayout({
             bonusPulse={bonusPulse}
             mobileLayout={true}
             lockSize={34 * cardScale}
+            rtpChecks={game.rtpChecks}
           />
         </div>
       )}

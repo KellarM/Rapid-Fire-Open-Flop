@@ -2,6 +2,7 @@ import React, { useEffect, useRef } from 'react';
 import PlayingCard from './PlayingCard';
 import { FIXED_HANDS, formatPayout } from '@/lib/game/cards';
 import Chip from '@/components/game/Chip';
+import RtpBadge from '@/components/game/RtpBadge';
 
 // ── Inject keyframe animations once into the document head ──────────────────
 const STYLE_ID = 'rf-card-board-animations';
@@ -88,7 +89,7 @@ function injectStyles() {
 }
 
 export default function CardBoard({ odds, bets, caps, phase, onPlace, onRemove, compact = false,
-  handEvals = {}, leadingHandIds = [], winnerHandIds = [], bonusPulse = null }) {
+  handEvals = {}, leadingHandIds = [], winnerHandIds = [], bonusPulse = null, rtpChecks = null }) {
 
   useEffect(() => {injectStyles();}, []);
 
@@ -152,6 +153,7 @@ export default function CardBoard({ odds, bets, caps, phase, onPlace, onRemove, 
               isAntePhase={isAntePhase}
               bonusPulse={bonusPulse}
               bonusIndex={handArrayIdx}
+              rtpCheck={rtpChecks ? rtpChecks.card[hand.id] : null}
               onPlace={() => onPlace('card', hand.id)}
               onRemove={() => onRemove('card', hand.id)}>
               
@@ -202,7 +204,7 @@ export function SectionTitle({ children, capValue }) {
 export function BettingSlot({
   oddsLabel, locked, lockReason = null, bet, onPlace, onRemove, children,
   rankLabel = null, isLeading = false, isWinner = false, isResolved = false,
-  bonusPulse = null, bonusIndex = null, isAntePhase = false
+  bonusPulse = null, bonusIndex = null, isAntePhase = false, rtpCheck = null
 }) {
   // ── Vault tint locked treatment (Option A) ──────────────────────────────────
   // When locked: dulled gold border, grayscale cards, dark scrim with padlock
@@ -367,6 +369,9 @@ export function BettingSlot({
           WIN
         </div>
       }
+
+      {/* RTP verification badge — top-left, operator tool only */}
+      {!locked && <RtpBadge check={rtpCheck} />}
 
       {/* Odds label — top (shows actual odds even when locked) */}
       <div style={{

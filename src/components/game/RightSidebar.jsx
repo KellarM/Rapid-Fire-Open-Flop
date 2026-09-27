@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { RANK_LABELS, formatPayout, formatMoney } from '@/lib/game/cards';
 import Chip from '@/components/game/Chip';
+import RtpBadge from '@/components/game/RtpBadge';
 
 const GAP = 4;
 const R   = 8;
@@ -245,6 +246,8 @@ export default function RightSidebar({
   // Falls back to the original per-board sizes when not provided
   // (Desktop, which renders CardBoard at true unscaled pixels already).
   lockSize = null,
+  // RTP verification results (operator tool) — Card and Rank boards only.
+  rtpChecks = null,
 }) {
   const rankLockSize = lockSize ?? 20;
   const colorLockSize = lockSize ?? 20;
@@ -440,6 +443,7 @@ export default function RightSidebar({
             const bet = bets.rank[label] || 0;
             const isLeading = leadingRankLabel === label;
             const isWinner  = winnerRankLabel === label;
+            const rtpCheck  = rtpChecks ? rtpChecks.rank[label] : null;
             const baseStyle = locked ? GOLD_DIM : GOLD_ACTIVE;
             // Leading position (pre-resolution) gets an extra brightness/glow
             // boost so it pops — the other unlocked positions stay at their
@@ -458,6 +462,8 @@ export default function RightSidebar({
                 <span style={{ color: 'rgba(0,0,0,0.88)', fontWeight: 900, fontSize: 15, lineHeight: 1, WebkitTextStroke: '0.4px currentColor' }}>
                   {label}
                 </span>
+                {/* RTP verification badge — top-left, operator tool only */}
+                {!locked && <RtpBadge check={rtpCheck} size={13} />}
                 {/* Odds — ALWAYS visible (dimmed when locked), same right slot as other boards */}
                 <span style={{ color: locked ? 'rgba(0,0,0,0.45)' : 'rgba(0,0,0,0.88)', fontWeight: 900, fontSize: 14, lineHeight: 1, WebkitTextStroke: '0.4px currentColor' }}>
                   {formatPayout(p)}
