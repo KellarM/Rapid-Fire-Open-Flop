@@ -2,7 +2,7 @@ import React from 'react';
 import { SUIT_SYMBOL, SUIT_COLOR } from '@/lib/game/cards';
 
 // Official Rapid Fire Open Flop casino card back (supplied 2026-11-13)
-const CARD_BACK_LOGO = 'https://base44.app/api/apps/6a669c10586e3d2dd9f2cdba/files/mp/public/6a669c10586e3d2dd9f2cdba/197e5e5dd_RapidFireOpenFlopCardBack.png';
+const CARD_BACK_LOGO = 'https://base44.app/api/apps/6a669c10586e3d2dd9f2cdba/files/mp/public/6a669c10586e3d2dd9f2cdba/09d329f58_RapidFireOpenFlopCardBack2.png';
 
 // Real card image URLs — all fixed hand cards
 export const CARD_IMAGES = {
