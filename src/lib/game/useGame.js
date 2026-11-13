@@ -353,10 +353,10 @@ export function useGame() {
   const caps = useMemo(() => {
     if (phase === 'ante' || ante === 0) return { card: 0, rank: 0, color: 0, river: 0 };
     // Cascade Betting (operator toggle): when ON, the Color board's max bet
-    // is the sum of the Card + Rank board bets instead of the Ante. When OFF,
-    // every board caps at the Ante (original behavior).
+    // is the Ante PLUS the Card board bets PLUS the Rank board bets. When OFF,
+    // the Color board caps at the Ante alone (same as the other boards).
     const colorCap = cascadeEnabled
-      ? Math.max(0, (boardTotals.card + boardTotals.rank) - boardTotals.color)
+      ? Math.max(0, (ante + boardTotals.card + boardTotals.rank) - boardTotals.color)
       : Math.max(0, ante - boardTotals.color);
     return {
       card: Math.max(0, ante - boardTotals.card),
@@ -421,7 +421,7 @@ export function useGame() {
     const cap = board === 'river'
       ? (cardTotal + rankTotal + colorTotal)
       : (board === 'color' && cascadeEnabled)
-        ? (cardTotal + rankTotal)
+        ? (ante + cardTotal + rankTotal)
         : ante;
     let boardCurrent, positionCurrent;
     if (board === 'river') {

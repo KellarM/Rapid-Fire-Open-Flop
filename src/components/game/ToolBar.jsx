@@ -1090,8 +1090,8 @@ function StatBox({ label, value, color }) {
 
 // ── Cascade Betting Modal (Operator Tool) ───────────────────────────────────
 // Toggles Cascade Betting: when ON, the Color board's maximum bet becomes the
-// sum of the Card + Rank board bets (instead of the Ante). When OFF, betting
-// is unchanged. Stored server-side (GameConfig) so it applies to every device.
+// Ante + the Card board bets + the Rank board bets. When OFF, the Color board
+// is capped at the Ante alone. Stored server-side (GameConfig), every device.
 function CascadeModal({ onClose }) {
   const [enabled, setEnabled] = useState(() => getSavedCascadeEnabled());
   const [active, setActive] = useState(() => getSavedCascadeEnabled());
@@ -1161,7 +1161,7 @@ function CascadeModal({ onClose }) {
         <div style={{ padding: '18px 22px', display: 'flex', flexDirection: 'column', gap: 14 }}>
           <div style={{ fontSize: 11, color: MUTED }}>
             When <b style={{ color: BODY_TEXT }}>ON</b>, the Color board's maximum bet becomes the
-            sum of the Card board bet + the Hand Rank board bet (instead of the Ante). When
+            Ante, plus the Card board bets, plus the Hand Rank board bets. When
             <b style={{ color: BODY_TEXT }}> OFF</b>, all board bets remain capped at the Ante as they are today.
           </div>
 

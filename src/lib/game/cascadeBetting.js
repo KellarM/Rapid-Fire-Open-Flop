@@ -1,7 +1,7 @@
 // Cascade Betting toggle — operator-configurable.
-// When ON, the Color board's maximum bet becomes the sum of the Card board
-// bet + the Hand Rank board bet (instead of the Ante). When OFF, all board
-// bets remain capped at the Ante (original behavior).
+// When ON, the Color board's maximum bet becomes the Ante + the Card board
+// bets + the Hand Rank board bets. When OFF, the Color board is capped at the
+// Ante alone (original behavior).
 //
 // Mirrors the Ante Structure / Bonus Multiplier persistence pattern:
 // localStorage + cookie fallback for instant load, plus a custom event for
