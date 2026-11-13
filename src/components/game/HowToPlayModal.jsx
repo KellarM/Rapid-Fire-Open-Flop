@@ -13,7 +13,7 @@ const STEPS = [
     title: 'Bet the Flop',
     icon: '🔓',
     description: 'The flop is made and 3 cards appear. All open positions on the 3 boards are now available to wager. Choose and place your wagers. Once you are comfortable with your selections, tap the Deal Turn button. Each board indicates with a Match Ante count.',
-    highlight: 'The player can choose to wager from zero to the Max of Ante value on any or all the boards (Card, Rank & Colour), or choose to fold.',
+    highlight: 'Wager from zero up to each board\'s cap, or fold. Card and Rank cap at the Ante. The Color board caps at the Ante — plus your Card and Rank bets when Cascade Betting is ON.',
   },
   {
     step: 3,

@@ -13,6 +13,7 @@ import {
   getAnteTierDescriptions,
 } from '../../lib/game/anteStructures';
 import { getSavedBonusMultipliers } from '../../lib/game/bonusMultipliers';
+import { getSavedCascadeEnabled } from '../../lib/game/cascadeBetting';
 
 function Section({ title, children, defaultOpen = false }) {
   const [open, setOpen] = useState(defaultOpen);
@@ -56,6 +57,7 @@ export default function GameRulesModal({ isOpen, onClose }) {
   const [structure, setStructure] = useState(null);
   const [tiers, setTiers] = useState([]);
   const [bonusMults, setBonusMults] = useState({ card: 5, rank: 4, colorRiver: 3 });
+  const [cascade, setCascade] = useState(false);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -66,6 +68,7 @@ export default function GameRulesModal({ isOpen, onClose }) {
       setTiers(getAnteTierDescriptions(s, 4));
     } catch {}
     try { setBonusMults(getSavedBonusMultipliers()); } catch {}
+    try { setCascade(getSavedCascadeEnabled()); } catch {}
   }, [isOpen]);
 
   return (
@@ -105,6 +108,7 @@ export default function GameRulesModal({ isOpen, onClose }) {
               <Badge label="Card Bonus" value={`${bonusMults.card}×`} />
               <Badge label="Rank Bonus" value={`${bonusMults.rank}×`} />
               <Badge label="Color/River Bonus" value={`${bonusMults.colorRiver}×`} />
+              <Badge label="Cascade Betting" value={cascade ? 'ON' : 'OFF'} />
             </div>
 
             {/* Scrollable content */}
@@ -120,13 +124,18 @@ export default function GameRulesModal({ isOpen, onClose }) {
               </Section>
 
               <Section title="The Ante">
-                <Rule label="Ante">Select a chip denomination and place your Ante, then press Deal. Your Ante is your entry into the round — it doesn't count toward any board bet or the River cap, and it gives you a real shot at winning it back plus a bonus, based on how many boards you qualify on. See Ante Return below for the exact payout tiers.</Rule>
+                <Rule label="Ante">Select a chip denomination and place your Ante, then press Deal. Your Ante is your entry into the round — it is not a bet on any board and it does not count toward the River cap{cascade ? ', though Cascade Betting does add it to the Color board cap' : ''}, and it gives you a real shot at winning it back plus a bonus, based on how many boards you qualify on. See Ante Return below for the exact payout tiers.</Rule>
                 <Rule label="All Bets Optional">All subsequent bets are optional. You may place bets on any or all boards, or fold at any stage.</Rule>
               </Section>
 
               <Section title="After the Flop">
                 <p className="text-gray-400 text-xs mb-3">Once the Flop is dealt, the Card, Rank, and Color boards open for betting. All bets are optional — you may bet on one, some, or all three boards, or none at all.</p>
-                <Rule label="Per-Board Cap">The total amount you can wager on each individual board cannot exceed your Ante. You may spread your wager across multiple positions within a board, but the combined total on that board is capped at the Ante.</Rule>
+                <Rule label="Per-Board Cap">
+                  {cascade
+                    ? "Card and Rank are each capped at your Ante. Cascade Betting is ON, so the Color board is capped at your Ante plus the combined total of your Card and Rank bets — its Match Ante figure climbs as those boards fill."
+                    : "Every board is capped at your Ante. Cascade Betting is OFF, so the Color board cannot go above the Ante, no matter what the other boards hold."}
+                  {' '}You may spread a board's wager across multiple positions, but the combined total on that board cannot exceed that board's cap.
+                </Rule>
                 <Rule label="Qualifying for Ante Return">To have a board count toward your Ante return, the full Ante amount must be placed on a single winning position on that board. Splitting the Ante across multiple positions — even if the total equals the Ante — will not qualify that board.</Rule>
                 <Rule label="Card Board">Bet on which of the 10 fixed hands will win the round. Each hand has its own odds based on the Flop.</Rule>
                 <Rule label="Rank Board">Bet on the poker rank of the winning hand (One Pair through Four of a Kind). Odds depend on the current board state.</Rule>
