@@ -12,7 +12,7 @@
 //   At RTP=96: 4% house edge applied
 // ============================================================
 
-import * as XLSX from 'xlsx';
+import ExcelJS from 'exceljs';
 import probabilityMatrix from './openFlopProbabilityMatrix.json';
 
 // Column letter helper (0-indexed → Excel letter)
@@ -33,7 +33,7 @@ const HAND_LABELS = [
 
 const RANK_NAMES = ['1 Pair', '2 Pair', '3 Of A Kind', 'Straight', 'Flush', 'Full House', '4 Of A Kind'];
 
-export function generateOpenFlopExcel(rtpValue = 100) {
+export async function generateOpenFlopExcel(rtpValue = 100) {
   // Build the worksheet as an array of arrays + formula overrides
   // Layout:
   // Row 0: Title
@@ -55,7 +55,7 @@ export function generateOpenFlopExcel(rtpValue = 100) {
   // Row 1: RTP setting
   wsData.push(['RTP %', rtpValue, '(Change this cell to recalculate all payouts)']);
   // Row 2: House Edge (formula)
-  wsData.push(['House Edge', { f: `1-${rtpCellRef}/100` }, '(auto-calculated)']);
+  wsData.push(['House Edge', { formula: `1-${rtpCellRef}/100` }, '(auto-calculated)']);
   // Row 3: blank
   wsData.push([]);
   // Row 4: Total flops
@@ -109,9 +109,9 @@ export function generateOpenFlopExcel(rtpValue = 100) {
       } else {
         const probCellRef = `${probCol}${excelRowNum}`;
         // True Odds = 1/p - 1 (static)
-        row.push(cp.probability, { f: `1/${probCellRef}-1` });
+        row.push(cp.probability, { formula: `1/${probCellRef}-1` });
         // Payout at RTP = (RTP/100) / p - 1 (formula referencing RTP cell)
-        row.push({ f: `(${rtpCellRef}/100)/${probCellRef}-1` });
+        row.push({ formula: `(${rtpCellRef}/100)/${probCellRef}-1` });
       }
     }
 
@@ -126,62 +126,49 @@ export function generateOpenFlopExcel(rtpValue = 100) {
         row.push(0, 'DEAD', 'DEAD');
       } else {
         const probCellRef = `${probCol}${excelRowNum}`;
-        row.push(rp.probability, { f: `1/${probCellRef}-1` });
-        row.push({ f: `(${rtpCellRef}/100)/${probCellRef}-1` });
+        row.push(rp.probability, { formula: `1/${probCellRef}-1` });
+        row.push({ formula: `(${rtpCellRef}/100)/${probCellRef}-1` });
       }
     }
 
     wsData.push(row);
   }
 
-  // Create worksheet
-  const ws = XLSX.utils.aoa_to_sheet(wsData);
+  // Create workbook + worksheet
+  const wb = new ExcelJS.Workbook();
+  const ws = wb.addWorksheet('Open Flop Matrix');
 
-  // Set column widths
-  ws['!cols'] = [
-    { wch: 8 },   // Flop #
-    { wch: 8 },   // Card 1
-    { wch: 8 },   // Card 2
-    { wch: 8 },   // Card 3
-    { wch: 12 },  // Board Win %
-  ];
-  for (let i = 0; i < 17; i++) {
-    ws['!cols'].push({ wch: 10 }, { wch: 12 }, { wch: 12 }); // Prob, TrueOdds, Payout
+  // Data rows (formula objects are written as live Excel formulas)
+  for (const row of wsData) {
+    ws.addRow(row);
   }
 
-  // Merge title row across all columns
-  ws['!merges'] = [
-    { s: { r: 0, c: 0 }, e: { r: 0, c: 10 } }, // Title
-    { s: { r: 1, c: 2 }, e: { r: 1, c: 10 } }, // RTP note
-    { s: { r: 2, c: 2 }, e: { r: 2, c: 10 } }, // House edge note
-    { s: { r: 4, c: 2 }, e: { r: 4, c: 10 } }, // Total flops note
-  ];
+  // Set column widths
+  const widths = [8, 8, 8, 8, 12];         // Flop #, Card 1-3, Board Win %
+  for (let i = 0; i < 17; i++) widths.push(10, 12, 12); // Prob, TrueOdds, Payout
+  widths.forEach((w, i) => { ws.getColumn(i + 1).width = w; });
+
+  // Merge title row across all columns (1-indexed: row, left col, row, right col)
+  ws.mergeCells(1, 1, 1, 11);   // Title
+  ws.mergeCells(2, 3, 2, 11);   // RTP note
+  ws.mergeCells(3, 3, 3, 11);   // House edge note
+  ws.mergeCells(5, 3, 5, 11);   // Total flops note
 
   // Merge group header cells (each group spans 3 columns)
   for (let h = 0; h < 10; h++) {
-    ws['!merges'].push({
-      s: { r: 6, c: 5 + h * 3 },
-      e: { r: 6, c: 5 + h * 3 + 2 }
-    });
+    ws.mergeCells(7, 5 + h * 3 + 1, 7, 5 + h * 3 + 3);
   }
   for (let r = 0; r < 7; r++) {
-    ws['!merges'].push({
-      s: { r: 6, c: 35 + r * 3 },
-      e: { r: 6, c: 35 + r * 3 + 2 }
-    });
+    ws.mergeCells(7, 35 + r * 3 + 1, 7, 35 + r * 3 + 3);
   }
 
-  // Create workbook
-  const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, 'Open Flop Matrix');
-
   // Generate file
-  const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+  const wbout = await wb.xlsx.writeBuffer();
   return new Blob([wbout], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
 }
 
-export function downloadOpenFlopExcel(rtpValue = 100) {
-  const blob = generateOpenFlopExcel(rtpValue);
+export async function downloadOpenFlopExcel(rtpValue = 100) {
+  const blob = await generateOpenFlopExcel(rtpValue);
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
