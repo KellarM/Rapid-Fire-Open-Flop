@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { base44 } from '@/api/base44Client';
 import { savePass, tidyCode } from '@/lib/access';
 
@@ -16,6 +16,17 @@ const GOLD_BRIGHT = '#f0d79a';
 export default function AccessGate({ onUnlock }) {
   const [code, setCode] = useState('');
   const [visible, setVisible] = useState(false);
+  // Browsers ignore autocomplete=off on password fields and fill them anyway.
+  // Holding the field read-only until it is touched is what actually stops a saved
+  // password appearing in the box before anyone types.
+  const [locked, setLocked] = useState(true);
+  const field = useRef(null);
+
+  // Whatever a browser managed to put in the box before React took over, clear it.
+  useEffect(() => {
+    if (field.current) field.current.value = '';
+    setCode('');
+  }, []);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
 
@@ -403,10 +414,13 @@ export default function AccessGate({ onUnlock }) {
                 type={visible ? 'text' : 'password'}
                 value={code}
                 onChange={(event) => setCode(event.target.value)}
-                autoComplete="off"
+                autoComplete="new-password"
                 autoCapitalize="none"
                 autoCorrect="off"
                 spellCheck={false}
+                readOnly={locked}
+                ref={field}
+                onFocus={() => setLocked(false)}
                 placeholder="Enter your code"
                 aria-invalid={Boolean(error)}
                 aria-describedby={error ? 'entry-error' : undefined}
@@ -452,8 +466,8 @@ export default function AccessGate({ onUnlock }) {
 
         <p className="xfh-foot">
           Access is by invitation. To request a code, write to{' '}
-          <a className="xfh-mailto" href="mailto:info@xfhgamestudioltd.ca?subject=Access%20request%20-%20XFH%20Game%20Studio">
-            info@xfhgamestudioltd.ca
+          <a className="xfh-mailto" href="mailto:KellarM@xfhgamestudioltd.com?subject=Access%20request%20-%20XFH%20Game%20Studio">
+            KellarM@xfhgamestudioltd.com
           </a>
           . Each code carries its own expiry date.
         </p>
