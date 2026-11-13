@@ -1,0 +1,19 @@
+{
+  "name": "AccessLog",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string"
+    },
+    "code_hint": {
+      "type": "string"
+    },
+    "entered_at": {
+      "type": "string"
+    },
+    "expires": {
+      "type": "string"
+    }
+  },
+  "required": []
+}

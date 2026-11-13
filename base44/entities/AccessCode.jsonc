@@ -1,0 +1,24 @@
+{
+  "name": "AccessCode",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Who the code is for"
+    },
+    "code": {
+      "type": "string",
+      "description": "The entry code"
+    },
+    "expires": {
+      "type": "string",
+      "description": "Last day it works, date only, may be empty"
+    },
+    "active": {
+      "type": "boolean",
+      "default": true,
+      "description": "False withdraws it without deleting it"
+    }
+  },
+  "required": []
+}
