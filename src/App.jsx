@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Toaster } from "@/components/ui/toaster"
 import { QueryClientProvider } from '@tanstack/react-query'
 import { queryClientInstance } from '@/lib/query-client'
@@ -9,9 +10,13 @@ import ScrollToTop from './components/ScrollToTop';
 // Add page imports here
 import GameTable from './pages/GameTable';
 import OpenFlopCertification from './pages/OpenFlopCertification';
+import AccessGate from './pages/AccessGate';
+import AccessAdmin from './pages/AccessAdmin';
+import { readPass } from '@/lib/access';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
+  const [pass, setPass] = useState(readPass());
 
   // Show loading spinner while checking app public settings or auth
   if (isLoadingPublicSettings || isLoadingAuth) {
@@ -33,12 +38,18 @@ const AuthenticatedApp = () => {
     }
   }
 
+  // The front door. Nothing below renders without a pass the server issued.
+  if (!pass) {
+    return <AccessGate onUnlock={setPass} />;
+  }
+
   // Render the main app
   return (
     <Routes>
       {/* Add your page Route elements here */}
       <Route path="/" element={<GameTable />} />
       <Route path="/open-flop-certification" element={<OpenFlopCertification />} />
+      <Route path="/access-admin" element={<AccessAdmin />} />
       <Route path="*" element={<PageNotFound />} />
     </Routes>
   );
