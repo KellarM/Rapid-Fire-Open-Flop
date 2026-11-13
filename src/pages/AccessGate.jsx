@@ -331,6 +331,15 @@ export default function AccessGate({ onUnlock }) {
           color: rgba(234,228,216,0.42);
         }
 
+        .xfh-mailto {
+          color: rgba(217,177,102,0.92);
+          text-decoration: none;
+          border-bottom: 1px solid rgba(217,177,102,0.35);
+          padding-bottom: 1px;
+          transition: color 140ms ease, border-color 140ms ease;
+        }
+        .xfh-mailto:hover { color: var(--gold-bright); border-color: rgba(240,215,154,0.75); }
+
         .xfh-admin {
           margin: 18px 0 0;
           text-align: center;
@@ -442,8 +451,11 @@ export default function AccessGate({ onUnlock }) {
         </form>
 
         <p className="xfh-foot">
-          Access is by invitation. Each code carries its own expiry date; if yours has lapsed,
-          ask Michael for a new one.
+          Access is by invitation. To request a code, write to{' '}
+          <a className="xfh-mailto" href="mailto:info@xfhgamestudioltd.ca?subject=Access%20request%20-%20XFH%20Game%20Studio">
+            info@xfhgamestudioltd.ca
+          </a>
+          . Each code carries its own expiry date.
         </p>
 
         <p className="xfh-admin">
