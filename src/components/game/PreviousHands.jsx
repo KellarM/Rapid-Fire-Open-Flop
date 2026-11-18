@@ -34,12 +34,13 @@ export default function PreviousHands({ history }) {
         PREVIOUS HANDS
       </div>
       <div
-        className="grid grid-cols-3 px-3 py-1.5 text-center"
+        className="grid grid-cols-3 px-3 pt-1.5 text-center"
         style={{
           color: '#E5B64E',
           fontSize: 10,
           fontWeight: 700,
           letterSpacing: '0.5px',
+          paddingBottom: 10,
           borderBottom: '1px solid rgba(197,160,89,0.3)'
         }}
       >
@@ -49,7 +50,7 @@ export default function PreviousHands({ history }) {
       </div>
       <div
         className="flex-1 overflow-y-auto no-scrollbar"
-        style={{ minHeight: 0, scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+        style={{ minHeight: 0, paddingTop: 10, scrollbarWidth: 'none', msOverflowStyle: 'none' }}
       >
         {history.length === 0 && (
           <div className="text-center py-6 text-xs" style={{ color: '#5a678a', opacity: 0.5 }}>
