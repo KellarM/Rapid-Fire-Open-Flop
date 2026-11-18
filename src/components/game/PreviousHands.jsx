@@ -1,6 +1,14 @@
 import React from 'react';
 import HandNotation from './HandNotation';
 
+// R/B result colour — red text when the board went red, white when it went black
+function rbColor(rb) {
+  if (!rb || rb === '—') return '#888888';
+  const token = String(rb).trim().split(/\s+/)[0] || '';
+  if (token.endsWith('R')) return '#FF3B3B';
+  return '#FFFFFF';
+}
+
 export default function PreviousHands({ history }) {
   return (
     <div
@@ -37,7 +45,7 @@ export default function PreviousHands({ history }) {
       >
         <div className="text-left">HAND</div>
         <div>TYPE</div>
-        <div className="text-right">R/B L/H</div>
+        <div>R/B L/H</div>
       </div>
       <div
         className="flex-1 overflow-y-auto no-scrollbar"
@@ -64,7 +72,7 @@ export default function PreviousHands({ history }) {
               {h.hand === 'BOARD' && <span className="text-white">BOARD</span>}
             </div>
             <div style={{ color: h.color, fontWeight: 700 }}>{h.type}</div>
-            <div className="text-right" style={{ color: h.color, fontWeight: 700 }}>{h.rb}</div>
+            <div style={{ color: rbColor(h.rb), fontWeight: 700 }}>{h.rb}</div>
           </div>
         ))}
       </div>
