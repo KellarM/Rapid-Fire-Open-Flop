@@ -1,13 +1,5 @@
 import React from 'react';
-import HandNotation from './HandNotation';
-
-// R/B result colour — red text when the board went red, white when it went black
-function rbColor(rb) {
-  if (!rb || rb === '—') return '#888888';
-  const token = String(rb).trim().split(/\s+/)[0] || '';
-  if (token.endsWith('R')) return '#FF3B3B';
-  return '#FFFFFF';
-}
+import PreviousHandRow from '@/components/game/PreviousHandRow';
 
 export default function PreviousHands({ history }) {
   return (
@@ -33,49 +25,29 @@ export default function PreviousHands({ history }) {
       >
         PREVIOUS HANDS
       </div>
-      <div
-        className="grid grid-cols-3 px-3 pt-1.5 text-center"
-        style={{
-          color: '#E5B64E',
-          fontSize: 10,
-          fontWeight: 700,
-          letterSpacing: '0.5px',
-          paddingBottom: 10,
-          borderBottom: '1px solid rgba(197,160,89,0.3)'
-        }}
-      >
-        <div className="text-left">HAND</div>
-        <div>TYPE</div>
-        <div>R/B L/H</div>
-      </div>
-      <div
-        className="flex-1 overflow-y-auto no-scrollbar"
-        style={{ minHeight: 0, paddingTop: 10, scrollbarWidth: 'none', msOverflowStyle: 'none' }}
-      >
-        {history.length === 0 && (
-          <div className="text-center py-6 text-xs" style={{ color: '#5a678a', opacity: 0.5 }}>
-            No hands yet
-          </div>
-        )}
-        {history.map((h, i) => (
-          <div
-            key={i}
-            className="grid grid-cols-3 px-3 py-1.5 text-center items-center"
-            style={{
-              background: i % 2 === 0 ? 'var(--theme-strip, rgba(4,18,43,0.7))' : 'transparent',
-              fontSize: 11,
-              borderBottom: '1px solid rgba(197,160,89,0.08)'
-            }}
-          >
-            <div className="text-left">
-              <HandNotation cards={h.handCards} />
-              {h.hand === 'FOLD' && <span style={{ color: '#888' }}>FOLD</span>}
-              {h.hand === 'BOARD' && <span className="text-white">BOARD</span>}
-            </div>
-            <div style={{ color: h.color, fontWeight: 700 }}>{h.type}</div>
-            <div style={{ color: rbColor(h.rb), fontWeight: 700 }}>{h.rb}</div>
-          </div>
-        ))}
+      <div className="flex-1 min-h-0 overflow-y-auto no-scrollbar" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+        <table className="w-full table-fixed border-collapse" aria-label="Previous hands">
+          <colgroup>
+            <col style={{ width: '32%' }} />
+            <col style={{ width: '32%' }} />
+            <col style={{ width: '18%' }} />
+            <col style={{ width: '18%' }} />
+          </colgroup>
+          <thead>
+            <tr style={{ color: '#E5B64E', fontSize: 10, fontWeight: 700, letterSpacing: '0.5px' }}>
+              {['HAND', 'TYPE', 'R/B', 'L/H'].map(label => (
+                <th key={label} scope="col" className="sticky top-0 z-10 px-1 pt-3 pb-3 text-center whitespace-nowrap" style={{ background: 'var(--theme-bg, #050d21)', borderBottom: '1px solid rgba(197,160,89,0.3)' }}>{label}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            <tr aria-hidden="true"><td colSpan={4} className="h-5 p-0" /></tr>
+            {history.length === 0 && (
+              <tr><td colSpan={4} className="text-center py-6 text-xs" style={{ color: '#5a678a', opacity: 0.5 }}>No hands yet</td></tr>
+            )}
+            {history.map((hand, index) => <PreviousHandRow key={index} hand={hand} index={index} />)}
+          </tbody>
+        </table>
       </div>
     </div>
   );
